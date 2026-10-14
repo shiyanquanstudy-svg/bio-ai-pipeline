@@ -2,13 +2,15 @@ from pathlib import Path
 import sqlite3
 import json
 from datetime import datetime
+import os
 
 DB_PATH = "data/bio_pipeline.db"
 
 
 def init_db():
     """初始化数据库，创建表（如果不存在）"""
-    Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
+    # === 新增这行：自动创建父文件夹 ===
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     # ===================================
     conn = sqlite3.connect(DB_PATH, timeout=10)
     cursor = conn.cursor()
