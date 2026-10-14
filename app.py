@@ -39,7 +39,13 @@ if st.button("🚀 开始分析", type="primary"):
         
         # 显示加载动画
         with st.spinner(f"正在处理 {uid}，请稍候..."):
-            success = run_pipeline(uid)
+            try:
+                success = run_pipeline(uid)
+            except Exception as e:
+                import traceback
+                st.error(f"💥 发生异常：{e}")
+                st.code(traceback.format_exc())  # 在网页上直接显示详细报错
+                success = False
         
         if success:
             st.success(f"✅ {uid} 分析完成！")
