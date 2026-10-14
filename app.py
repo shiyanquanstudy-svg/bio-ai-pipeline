@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from db_helper import init_db
 from pipeline import run_pipeline
+import requests  # 新增
 
 # 1. 页面基础设置
 st.set_page_config(
@@ -11,7 +12,40 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. 初始化数据库（每次刷新页面都会确保数据库存在）
+# ==================== 新增：侧边栏调试区 ====================
+st.sidebar.header("🛠️ 调试面板")
+
+# 第二步：显示云端/本地读取到的 Key
+try:
+    key_preview = st.secrets.get("DEEPSEEK_API_KEY", "未找到")
+except:
+    key_preview = "未找到"
+
+st.sidebar.write("**当前读取到的 Key：**")
+if key_preview != "未找到":
+    # 只显示前6位和后4位，保证安全
+    masked_key = key_preview[:6] + "****" + key_preview[-4:]
+    st.sidebar.success(f"{masked_key}")
+else:
+    st.sidebar.error("未找到 Key！")
+
+# 第三步：网络连通性测试按钮
+if st.sidebar.button("🌐 测试 DeepSeek 网络"):
+    try:
+        res = requests.get("https://api.deepseek.com", timeout=5)
+        st.sidebar.success(f"网络正常，状态码：{res.status_code}")
+    except Exception as e:
+        st.sidebar.error(f"网络不通：{e}")
+
+# 临时显示完整 Secrets 结构（部署稳定后可以删除）
+if st.sidebar.checkbox("显示所有 Secrets 键名"):
+    try:
+        st.sidebar.write(list(st.secrets.keys()))
+    except:
+        st.sidebar.write("无法读取 Secrets")
+# ==========================================================
+
+# 2. 初始化数据库
 init_db()
 
 # 3. 页面标题与说明
@@ -44,7 +78,7 @@ if st.button("🚀 开始分析", type="primary"):
             except Exception as e:
                 import traceback
                 st.error(f"💥 发生异常：{e}")
-                st.code(traceback.format_exc())  # 在网页上直接显示详细报错
+                st.code(traceback.format_exc())
                 success = False
         
         if success:
@@ -58,8 +92,6 @@ if st.button("🚀 开始分析", type="primary"):
                 
                 st.markdown("### 📊 AI 分析结果")
                 st.json(ai_data)
-                
-                # 如果是缓存命中，再补一句提示
                 st.info("💡 如果结果来自本地缓存，则本次没有消耗任何 AI 额度。")
             else:
                 st.warning("⚠️ 结果文件未找到，请查看终端日志。")
